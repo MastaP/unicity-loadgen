@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unicity load generator</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f6f4;
+    --surface-1: #ffffff;
+    --surface-2: #f0f0ee;
+    --border: #e2e2df;
+    --text-primary: #191919;
+    --text-secondary: #666666;
+    --text-tertiary: #8a8a8a;
+    --grid: #ececea;
+    --accent: #257de0;
+    --accent-ink: #ffffff;
+    --series-accepted: #257de0;
+    --series-included: #00b894;
+    --series-limited: #f47230;
+    --good: #0a7d1d;
+    --warning-ink: #8a5a00;
+    --warning-bg: #fff4d6;
+    --critical: #c8302f;
+    --critical-bg: #fde8e8;
+    --danger-btn: #c8302f;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #111111;
+      --surface-1: #191919;
+      --surface-2: #222222;
+      --border: #2e2e2e;
+      --text-primary: #efefef;
+      --text-secondary: #9c9c9c;
+      --text-tertiary: #767676;
+      --grid: #262626;
+      --accent: #338ced;
+      --accent-ink: #ffffff;
+      --series-accepted: #338ced;
+      --series-included: #00a888;
+      --series-limited: #e76624;
+      --good: #0aac23;
+      --warning-ink: #fbb315;
+      --warning-bg: #2e2510;
+      --critical: #eb6263;
+      --critical-bg: #331a1a;
+      --danger-btn: #dc3c3d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font: 14px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 48px; }
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--text-secondary); }
+  h2 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .stack > * + * { margin-top: 14px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  label.field { display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+  input[type=number], input[type=password], input[type=text] {
+    font: inherit; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px;
+  }
+  input[type=number] { width: 84px; font-variant-numeric: tabular-nums; }
+  input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input:disabled { opacity: 0.6; }
+  #apiKey { width: 340px; font-family: var(--mono); font-size: 13px; }
+  button {
+    font: inherit; border-radius: 6px; padding: 6px 12px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-primary);
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; padding: 8px 20px; }
+  button.danger { background: var(--danger-btn); border-color: var(--danger-btn); color: #fff; font-weight: 600; padding: 8px 20px; }
+  button.link { border: none; background: none; color: var(--accent); padding: 2px 4px; }
+  .segmented { position: relative; display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .segmented input { position: absolute; inset: 0; width: 0; height: 0; margin: 0; opacity: 0; pointer-events: none; }
+  .segmented label { padding: 6px 16px; cursor: pointer; color: var(--text-secondary); }
+  .segmented input:checked + label { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .segmented input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .segmented input:disabled + label { cursor: default; }
+  .muted { color: var(--text-secondary); }
+  .faint { color: var(--text-tertiary); }
+  .mono { font-family: var(--mono); font-size: 12.5px; }
+  .chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px 3px 7px; font-family: var(--mono); font-size: 12.5px; cursor: pointer; }
+  .chip input { margin: 0; }
+  .offered { color: var(--text-secondary); }
+  .error-text { color: var(--critical); }
+  .banner { margin: 14px 0; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-1); display: flex; gap: 10px; align-items: center; }
+  .banner .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-tertiary); flex: none; }
+  .banner.running .dot { background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 25%, transparent); }
+  .banner.draining .dot { background: var(--warning-ink); }
+  .banner.failed { background: var(--critical-bg); border-color: color-mix(in srgb, var(--critical) 40%, transparent); }
+  .banner.failed .dot { background: var(--critical); }
+  .banner.mainnet-warn { background: var(--warning-bg); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .tile .label { color: var(--text-secondary); font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+  .tile .value { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin-top: 2px; }
+  .tile .sub { color: var(--text-tertiary); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; display: inline-block; }
+  dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+  dl.kv dt { color: var(--text-secondary); }
+  dl.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 1px 9px; font-size: 12.5px; font-weight: 600; }
+  .pill.ok { color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+  .pill.warn { color: var(--warning-ink); background: var(--warning-bg); }
+  .pill.bad { color: var(--critical); background: var(--critical-bg); }
+  .pill.idle { color: var(--text-secondary); background: var(--surface-2); }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 12.5px; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  td { padding: 5px 8px; border-bottom: 1px solid var(--grid); }
+  th.num, td.num { text-align: right; white-space: nowrap; }
+  th { white-space: nowrap; }
+  .log-wrap { max-height: 360px; overflow: auto; }
+  .log td { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+  .log td.detail { white-space: normal; word-break: break-word; }
+  .k-ok { color: var(--good); }
+  .k-warn { color: var(--warning-ink); }
+  .k-bad { color: var(--critical); }
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--text-secondary); font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .line { width: 14px; height: 2px; border-radius: 1px; }
+  #chart { position: relative; height: 230px; }
+  #chart svg { display: block; width: 100%; height: 100%; }
+  #chart text { fill: var(--text-tertiary); font: 11px var(--sans); font-variant-numeric: tabular-nums; }
+  #chart .end-label { fill: var(--text-secondary); font-weight: 600; }
+  #tooltip {
+    position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+    display: none; min-width: 150px; font-variant-numeric: tabular-nums; z-index: 2;
+  }
+  #tooltip .t { color: var(--text-secondary); margin-bottom: 4px; }
+  #tooltip .r { display: flex; justify-content: space-between; gap: 14px; }
+  #tooltip .r span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+  footer { margin-top: 18px; color: var(--text-tertiary); font-size: 12.5px; }
+  .empty { color: var(--text-tertiary); padding: 8px 0; }
+  details summary { cursor: pointer; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Unicity load generator</h1>
+    <p>Random signed commitments → <span class="mono">certification_request</span> → inclusion proof</p>
+  </header>
+
+  <section class="card stack" id="controls" aria-label="Run settings">
+    <div class="row">
+      <div class="segmented" role="radiogroup" aria-label="Network">
+        <input type="radio" name="network" id="net-testnet" value="testnet"><label for="net-testnet">Testnet</label>
+        <input type="radio" name="network" id="net-mainnet" value="mainnet"><label for="net-mainnet">Mainnet</label>
+      </div>
+      <span class="mono muted" id="gatewayUrl"></span>
+    </div>
+
+    <div class="row">
+      <label class="field" for="apiKey">API key</label>
+      <input type="password" id="apiKey" autocomplete="off" spellcheck="false" placeholder="key for this network">
+      <button type="button" id="toggleKey">Show</button>
+      <span class="faint">Saved in this browser only, one per network.</span>
+    </div>
+
+    <div class="row">
+      <span class="muted">Shards</span>
+      <span class="chips" id="shardChips"></span>
+      <span>
+        <button type="button" class="link" id="shardsAll">All</button>
+        <button type="button" class="link" id="shardsNone">None</button>
+      </span>
+      <span class="faint" id="shardNote"></span>
+    </div>
+
+    <div class="row">
+      <label class="field">Period <input type="number" id="periodMin" min="0" step="any"> min</label>
+      <span class="faint">0 = until stopped</span>
+      <label class="field">Every <input type="number" id="intervalSec" min="0.05" step="any"> s</label>
+      <label class="field">Commitments per send <input type="number" id="countMin" min="1" step="1"> – <input type="number" id="countMax" min="1" step="1"></label>
+    </div>
+
+    <div class="row">
+      <button type="button" class="primary" id="startBtn">Start</button>
+      <button type="button" class="danger" id="stopBtn" hidden>Stop</button>
+      <span class="offered" id="offered"></span>
+      <span class="error-text" id="formError" role="alert"></span>
+    </div>
+  </section>
+
+  <div class="banner" id="banner" role="status"><span class="dot"></span><span id="bannerText">Ready. Nothing is being sent.</span></div>
+
+  <section class="tiles" aria-label="Totals">
+    <div class="tile"><div class="label">Sent</div><div class="value" id="tSent">0</div><div class="sub" id="tSentSub">&nbsp;</div></div>
+    <div class="tile"><div class="label"><span class="swatch" style="background:var(--series-accepted)"></span>Accepted</div><div class="value" id="tAccepted">0</div><div class="sub" id="tAcceptedSub">&nbsp;</div></div>
+    <div class="tile"><div class="label"><span class="swatch" style="background:var(--series-included)"></span>Included</div><div class="value" id="tIncluded">0</div><div class="sub" id="tIncludedSub">&nbsp;</div></div>
+    <div class="tile"><div class="label"><span class="swatch" style="background:var(--series-limited)"></span>Rate-limited</div><div class="value" id="tLimited">0</div><div class="sub" id="tLimitedSub">&nbsp;</div></div>
+    <div class="tile"><div class="label">Errors</div><div class="value" id="tErrors">0</div><div class="sub" id="tErrorsSub">&nbsp;</div></div>
+    <div class="tile"><div class="label">Proofs pending</div><div class="value" id="tPending">0</div><div class="sub" id="tPendingSub">&nbsp;</div></div>
+    <div class="tile"><div class="label">Proof timeouts</div><div class="value" id="tTimeouts">0</div><div class="sub">no proof within 60 s</div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Rate limit</h2>
+      <dl class="kv">
+        <dt>Key status</dt><dd id="rKeyStatus"><span class="pill idle">no data</span></dd>
+        <dt>Quota left</dt><dd id="rRemaining">–</dd>
+        <dt>Retry-After</dt><dd id="rRetryAfter">–</dd>
+        <dt>Limited, last 10 s</dt><dd id="rShare">–</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h2>Timing</h2>
+      <dl class="kv">
+        <dt>Submit round trip</dt><dd id="lSubmit">–</dd>
+        <dt>Accepted → proof</dt><dd id="lProof">–</dd>
+        <dt>Proof requests</dt><dd id="lPolls">–</dd>
+        <dt>Missed sends</dt><dd id="lMissed">–</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <div class="chart-head">
+      <h2>Per second, last 5 minutes</h2>
+      <div class="legend" aria-hidden="true">
+        <span><span class="line" style="background:var(--series-accepted)"></span>Accepted</span>
+        <span><span class="line" style="background:var(--series-included)"></span>Included</span>
+        <span><span class="line" style="background:var(--series-limited)"></span>Rate-limited</span>
+      </div>
+    </div>
+    <div id="chart"><div id="tooltip"></div></div>
+  </section>
+
+  <section class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h2>Shards</h2>
+      <table aria-label="Per-shard results">
+        <thead><tr><th>Shard</th><th class="num">Accepted 10 s</th><th class="num">60 s</th><th class="num">Total</th><th class="num">Included</th><th class="num">Proof p50</th><th class="num">p95</th></tr></thead>
+        <tbody id="shardRows"></tbody>
+      </table>
+      <div class="faint" id="shardFoot" style="margin-top:6px;font-size:12.5px"></div>
+    </div>
+    <div class="card">
+      <h2>Not accepted</h2>
+      <div id="failures"><div class="empty">Nothing yet.</div></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h2>Log <span class="faint" style="text-transform:none;letter-spacing:0;font-weight:400">newest first, last 200 events</span></h2>
+    <div class="log-wrap">
+      <table class="log">
+        <thead><tr><th>Time</th><th class="num">#</th><th>Shard</th><th>Event</th><th class="num">ms</th><th>Detail</th></tr></thead>
+        <tbody id="logRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Each commitment uses a fresh random secp256k1 key, a random source state and a random transaction hash, built and signed with
+    @unicitylabs/state-transition-sdk __SDK_VERSION__. Proofs are requested once a second after acceptance and thrown away once received.
+    Keep this tab open while a run is going; a background clock keeps the pace when the tab is hidden.
+  </footer>
+</main>
+<!-- APP_SCRIPT -->
+</body>
+</html>
