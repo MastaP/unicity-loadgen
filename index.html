@@ -366,5 +366,85 @@ About ${a.toFixed(a>=10?0:2)} commitments per second ${n.periodMin>0?`for ${n.pe
 
 Every accepted commitment stays in the mainnet tree permanently.`))return}let o=St[t].url,i=r.length===ut.length;Ft=[],Et=null,fn=t;let s=null;T=s=new Je({allShards:ut,intervalMs:n.intervalSec*1e3,max:n.countMax,min:n.countMin,onEvent:a=>{T===s&&(Ft.push(a),Ft.length>Yn*2&&(Ft=Ft.slice(-Yn)))},onPhase:()=>{T===s&&(mi(),pn(!0))},periodMs:n.periodMin*6e4,targets:i?[]:r,transport:{build:io,now:()=>Date.now(),poll:(a,c)=>mo(o,e,a,c),submit:(a,c)=>po(o,e,a,c)}}),T.start(Date.now()),tr.start()}function mi(){let n=T!==null&&T.phase!=="done";hi(!n);for(let t of w("shardChips").querySelectorAll("input"))t.disabled=n;w("startBtn").hidden=n,w("stopBtn").hidden=!n,w("stopBtn").textContent=T?.phase==="draining"?"Stop now":"Stop",n||tr.stop()}var tr=(()=>{let n=null,t=null,e=()=>{let r=Date.now();T&&T.phase!=="done"&&T.tick(r),r-Bo>=li&&pn(!1)};try{let r="let t=null;onmessage=(e)=>{clearInterval(t);t=null;if(e.data>0){t=setInterval(()=>postMessage(0),e.data);}};";n=new Worker(URL.createObjectURL(new Blob([r],{type:"text/javascript"}))),n.onmessage=e}catch{n=null}return{start(){n?n.postMessage(bo):t===null&&(t=setInterval(e,bo))},stop(){n?n.postMessage(0):t!==null&&(clearInterval(t),t=null)},usesWorker:n!==null}})();function pn(n){let t=Date.now();if(!n&&document.hidden||(Bo=t,Io(t),!T))return;let e=T.stats;gi(e,t),bi(e,t),yi(e),Wn(e,t),xi(e,t),Si(e),Ai()}function ve(n,t){let e=w("banner");e.className=`banner ${n}`,w("bannerText").textContent=t}function Io(n){if(!T){ve("","Ready. Nothing is being sent.");return}let t=St[fn].label,e=yo((T.endedAt??n)-T.startedAt);if(T.phase==="running"){let r=T.endsAt===null?"until stopped":`${yo(T.endsAt-n)} left`;ve(fn==="mainnet"?"running mainnet-warn":"running",`Running on ${t} \xB7 ${e} elapsed \xB7 ${r} \xB7 send #${L(T.sendCount)}`)}else if(T.phase==="draining"&&T.abandoning)ve("draining",`Stopping now \xB7 cancelling ${L(T.inFlightSubmits)} open submissions`);else if(T.phase==="draining")ve("draining",`Stopping (${T.stopReason}) \xB7 waiting for ${L(T.pending.size)} proofs and ${L(T.inFlightSubmits)} submissions \xB7 press \u201CStop now\u201D to drop them`);else if(T.phase==="done"){let r=T.stopReason?.includes("401")||T.stopReason?.includes("402");ve(r?"failed":"",`${r?"Stopped":"Finished"} on ${t}: ${T.stopReason} \xB7 ran ${e} \xB7 ${L(T.sendCount)} sends`)}}function Xn(n,t){return t>0?`${(n/t*100).toFixed(n===t||n===0?0:1)}%`:""}function gi(n,t){let e=n.series(t,10),r=o=>e.reduce((i,s)=>i+s[o],0);w("tSent").textContent=L(n.sent),w("tSentSub").textContent=n.abandoned>0?`${L(n.abandoned)} dropped on stop`:`${L(T.sendCount)} sends`,w("tAccepted").textContent=L(n.accepted),w("tAcceptedSub").textContent=`${(r("accepted")/10).toFixed(1)}/s last 10 s`,w("tIncluded").textContent=L(n.included),w("tIncludedSub").textContent=n.accepted>0?`${Xn(n.included,n.accepted)} of accepted`:"\xA0",w("tLimited").textContent=L(n.rateLimited),w("tLimitedSub").textContent=n.sent>0?`${Xn(n.rateLimited,n.sent)} of sent`:"\xA0",w("tErrors").textContent=L(n.errors),w("tErrorsSub").textContent=n.errors>0?"see \u201CNot accepted\u201D":"\xA0",w("tPending").textContent=L(T.pending.size),w("tPendingSub").textContent=T.inFlightSubmits>0?`${L(T.inFlightSubmits)} submissions in flight`:"\xA0",w("tTimeouts").textContent=L(n.proofTimeouts)}function bi(n,t){let e;n.keyBlocked?e='<span class="pill bad">\u2715 Blocked</span> <span class="muted">429 without Retry-After</span>':n.lastRateLimitedAt!==null&&t-n.lastRateLimitedAt<1e4?e=`<span class="pill warn">\u25B2 Throttled</span> <span class="muted">last 429 ${Zn(n.lastRateLimitedAt,t)}</span>`:n.accepted>0||n.lastRateLimitedAt!==null?e='<span class="pill ok">\u2713 Not limited</span> <span class="muted">no 429 in the last 10 s</span>':e='<span class="pill idle">no data</span>',w("rKeyStatus").innerHTML=e,w("rRemaining").textContent=n.lastRemaining===null?"\u2013":`${L(n.lastRemaining)} (${Zn(n.lastRemainingAt,t)})`;let r=typeof n.lastRetryAfter=="number"?`${L(n.lastRetryAfter)} s`:n.lastRetryAfter;w("rRetryAfter").textContent=n.lastRetryAfter===null?"\u2013":`${r} (${Zn(n.lastRetryAfterAt,t)})`;let o=n.series(t,10),i=o.reduce((a,c)=>a+c.limited,0),s=o.reduce((a,c)=>a+c.limited+c.accepted+c.errors,0);w("rShare").textContent=s>0?`${Xn(i,s)} (${L(i)} of ${L(s)})`:"\u2013"}function yi(n){let t=r=>{let o=r.percentile(50);return o===null?"\u2013":`p50 ${un(o)} \xB7 p95 ${un(r.percentile(95))}`};w("lSubmit").textContent=t(n.submitLatency),w("lProof").textContent=t(n.proofLatency);let e=[...n.pollFailures.values()].reduce((r,o)=>r+o,0);w("lPolls").textContent=`${L(n.proofPolls)}${e>0?` (${L(e)} failed)`:""}`,w("lMissed").textContent=n.missedSends>0?`${L(n.missedSends)} (page fell behind the schedule)`:"0"}function wi(n){let t=Math.max(1,n/4),e=10**Math.floor(Math.log10(t));for(let r of[1,2,2.5,5,10])if(r*e>=t&&r*e%1===0)return r*e;return 10*e}var ln=[{color:"var(--series-accepted)",key:"accepted",label:"Accepted"},{color:"var(--series-included)",key:"included",label:"Included"},{color:"var(--series-limited)",key:"limited",label:"Rate-limited"}];function Wn(n,t){let e=w("chart"),r=Math.max(320,e.clientWidth),o=e.clientHeight,i={bottom:22,left:44,right:96,top:10},s=r-i.left-i.right,a=o-i.top-i.bottom,c=n.series(t,Re),d=Math.floor(T.startedAt/1e3),f=Math.max(0,c.findIndex(g=>g.second>=d)),u=c.length-2,x=0;for(let g of c)x=Math.max(x,g.accepted,g.included,g.limited);let p=wi(x),k=p*4,C=g=>i.left+g/(Re-1)*s,E=g=>i.top+a-g/k*a,O=[];for(let g=0;g<=4;g++){let V=p*g,z=E(V).toFixed(1);O.push(`<line x1="${i.left}" x2="${i.left+s}" y1="${z}" y2="${z}" stroke="var(--grid)" stroke-width="1"/>`),O.push(`<text x="${i.left-8}" y="${z}" text-anchor="end" dominant-baseline="middle">${L(V)}</text>`)}for(let g=5;g>=0;g--){let V=Re-1-g*60,z=C(Math.max(0,V)).toFixed(1),y=g===0?"end":g===5?"start":"middle";O.push(`<text x="${z}" y="${o-6}" text-anchor="${y}">${g===0?"now":`\u2212${g} min`}</text>`)}if(u>=f){for(let y of ln){let G=[];for(let Q=f;Q<=u;Q++)G.push(`${C(Q).toFixed(1)},${E(c[Q][y.key]).toFixed(1)}`);O.push(`<polyline points="${G.join(" ")}" fill="none" stroke="${y.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`)}let g=ln.map(y=>({label:y.label,v:c[u][y.key]})).map(y=>({...y,y:E(y.v)})).sort((y,G)=>y.y-G.y),V=i.top+6,z=i.top+a-6;for(let y=0;y<g.length;y++)g[y].y=Math.max(g[y].y,y===0?V:g[y-1].y+14);for(let y=g.length-1;y>=0;y--)g[y].y=Math.min(g[y].y,y===g.length-1?z:g[y+1].y-14);for(let y of g)O.push(`<text class="end-label" x="${i.left+s+8}" y="${y.y.toFixed(1)}" dominant-baseline="middle">${At(y.label)} ${L(y.v)}</text>`)}let F=Et!==null&&Et>=f&&Et<=u;if(F){let g=C(Et).toFixed(1);O.push(`<line x1="${g}" x2="${g}" y1="${i.top}" y2="${i.top+a}" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="3 3"/>`);for(let V of ln){let z=c[Et][V.key];O.push(`<circle cx="${g}" cy="${E(z).toFixed(1)}" r="4" fill="${V.color}" stroke="var(--surface-1)" stroke-width="2"/>`)}}O.push(`<rect id="chartHit" x="${i.left}" y="${i.top}" width="${s}" height="${a}" fill="transparent"/>`);let N=e.querySelector("svg");N||(N=document.createElementNS("http://www.w3.org/2000/svg","svg"),N.setAttribute("role","img"),N.setAttribute("aria-label","Accepted, included and rate-limited commitments per second over the last five minutes"),e.prepend(N),N.addEventListener("mousemove",g=>{let V=N.getBoundingClientRect(),z=g.clientX-V.left,y=Math.max(320,e.clientWidth)-44-96,G=Math.round((z-44)/y*(Re-1));Et=G>=0&&G<Re-1?G:null,T&&Wn(T.stats,Date.now())}),N.addEventListener("mouseleave",()=>{Et=null,w("tooltip").style.display="none",T&&Wn(T.stats,Date.now())})),N.setAttribute("viewBox",`0 0 ${r} ${o}`),N.innerHTML=O.join("");let K=w("tooltip");if(F){let g=c[Et],V=new Date(g.second*1e3).toLocaleTimeString();K.innerHTML=`<div class="t">${At(V)}</div>`+ln.map(G=>`<div class="r"><span><span class="swatch" style="background:${G.color}"></span>${G.label}</span><span>${L(g[G.key])}</span></div>`).join("")+`<div class="r"><span>Errors</span><span>${L(g.errors)}</span></div>`,K.style.display="block";let z=C(Et),y=z+12+170>r?z-12-K.offsetWidth:z+12;K.style.left=`${y}px`,K.style.top=`${i.top}px`}else K.style.display="none"}function xi(n,t){let e=[],r=ut.length>0&&fn===q.network?ut:[...n.shards.keys()],o=new Set(T.targets.length>0?T.targets:T.allShards);for(let i of r){let s=n.shards.get(i),a=s?.latency.percentile(50)??null,c=s?.latency.percentile(95)??null,d=T.allShards.length>0&&!o.has(i);e.push(`<tr${d?' class="faint" title="Not targeted in this run"':""}><td class="mono">${At(Qn(i))}${d?" \u25CB":""}</td><td class="num">${L(n.acceptedIn(i,t,10))}</td><td class="num">${L(n.acceptedIn(i,t,60))}</td><td class="num">${L(s?.acceptedTotal??0)}</td><td class="num">${L(s?.included??0)}</td><td class="num">${un(a)}</td><td class="num">${un(c)}</td></tr>`)}w("shardRows").innerHTML=e.join("")||'<tr><td colspan="7" class="empty">No shard data.</td></tr>',w("shardFoot").textContent=T.allShards.length>0&&o.size<T.allShards.length?"\u25CB faded rows: not targeted in this run":""}function Si(n){let t=[];n.rateLimited>0&&t.push(`<tr><td>${Be["rate-limited"]}</td><td class="num">${L(n.rateLimited)}</td></tr>`);for(let[o,i]of n.statuses)t.push(`<tr><td>Aggregator status <span class="mono">${At(o)}</span></td><td class="num">${L(i)}</td></tr>`);for(let[o,i]of n.failures)t.push(`<tr><td>${At(Be[o]??o)}</td><td class="num">${L(i)}</td></tr>`);n.proofTimeouts>0&&t.push(`<tr><td>Proof timeouts (accepted, no proof in 60 s)</td><td class="num">${L(n.proofTimeouts)}</td></tr>`);for(let[o,i]of n.pollFailures)t.push(`<tr><td>Proof request: ${At(Be[o]??o)}</td><td class="num">${L(i)}</td></tr>`);if(n.shardMismatches>0&&t.push(`<tr><td class="k-bad">Proof came from a different shard than expected</td><td class="num">${L(n.shardMismatches)}</td></tr>`),t.length===0){w("failures").innerHTML='<div class="empty">Nothing yet.</div>';return}let e=[...n.failureDetails.entries()].sort((o,i)=>i[1]-o[1]).slice(0,12),r=w("failures").querySelector("details")?.open?" open":"";w("failures").innerHTML=`<table><tbody>${t.join("")}</tbody></table>`+(e.length>0?`<details style="margin-top:10px"${r}><summary>Details</summary><table><tbody>${e.map(([o,i])=>`<tr><td class="mono" style="word-break:break-word">${At(o)}</td><td class="num">${L(i)}</td></tr>`).join("")}</tbody></table></details>`:"")}function Ei(n){switch(n.kind){case"ok":return n.op==="submit"?n.accepted?["k-ok","accepted",""]:["k-bad",n.status,"aggregator status"]:["","proof",""];case"included":return["k-ok","included",n.proofShard!==void 0&&n.proofShard!==n.shard&&n.shard!==null?`proof from shard ${n.proofShard}`:""];case"rate-limited":return["k-warn",n.blocked?"429 blocked":"429",n.retryAfterRaw!=null?`Retry-After ${n.retryAfterRaw}`:"no Retry-After"];case"proof-timeout":return["k-bad","proof timeout","no proof within 60 s"];case"abandoned":return["faint","dropped","stopped before the proof arrived"];default:return["k-bad",`${n.op==="proof"?"proof: ":""}${Be[n.kind]??n.kind}`,n.detail??""]}}function Ai(){let n=[],t=Math.max(0,Ft.length-Yn);for(let e=Ft.length-1;e>=t;e--){let r=Ft[e],[o,i,s]=Ei(r),a=new Date(r.at),c=`${a.toLocaleTimeString([],{hour12:!1})}.${String(a.getMilliseconds()).padStart(3,"0")}`;n.push(`<tr><td>${c}</td><td class="num">${r.seq??""}</td><td>${At(Qn(r.shard))}</td><td class="${o}">${At(i)}</td><td class="num">${r.ms!=null?Math.round(r.ms):""}</td><td class="detail">${At(s)}</td></tr>`)}w("logRows").innerHTML=n.join("")||'<tr><td colspan="6" class="empty">Nothing yet.</td></tr>'}function Bi(){w("periodMin").value=q.periodMin,w("intervalSec").value=q.intervalSec,w("countMin").value=q.countMin,w("countMax").value=q.countMax;for(let t of["periodMin","intervalSec","countMin","countMax"])w(t).addEventListener("input",()=>{let e=Number(w(t).value);w(t).value!==""&&Number.isFinite(e)&&(q[t]=e,fe()),wo()});for(let t of Object.keys(St))w(`net-${t}`).addEventListener("change",()=>So(t));w("apiKey").addEventListener("input",()=>{q.keys[q.network]=w("apiKey").value.trim(),fe()}),w("toggleKey").addEventListener("click",()=>{let t=w("apiKey").type==="text";w("apiKey").type=t?"password":"text",w("toggleKey").textContent=t?"Show":"Hide"}),w("shardsAll").addEventListener("click",()=>{q.unticked[q.network]=[],fe(),hn()}),w("shardsNone").addEventListener("click",()=>{q.unticked[q.network]=[...ut],fe(),hn()}),w("startBtn").addEventListener("click",pi);let n=0;w("stopBtn").addEventListener("click",()=>{let t=Date.now();t-n<500||(n=t,T?.stop(t))}),document.addEventListener("visibilitychange",()=>{document.hidden||pn(!0)}),window.addEventListener("resize",()=>T&&pn(!0)),window.addEventListener("beforeunload",t=>{T&&T.phase!=="done"&&t.preventDefault()}),wo(),So(St[q.network]?q.network:"testnet"),Io(Date.now())}Bi();window.loadgen={get clockUsesWorker(){return tr.usesWorker},get run(){return T}};})();
 </script>
+<!--
+Third-party code bundled into this page:
+
+@noble/curves@2.2.0 (MIT)
+
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+========================================================================
+
+@noble/hashes@2.2.0 (MIT)
+
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+========================================================================
+
+@unicitylabs/state-transition-sdk@3.0.1 (ISC)
+
+MIT License
+
+Copyright (c) 2024 Unicity
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+
 </body>
 </html>

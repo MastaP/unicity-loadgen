@@ -9,11 +9,15 @@ check that the network status page reflects the load.
 
 ## Use
 
-Open `index.html` in a browser (straight from disk is fine; no server needed).
+Open it at **https://mastap.github.io/unicity-loadgen/**, or open `index.html` from a
+checkout in a browser (straight from disk is fine; no server needed).
 
 1. Pick **Testnet** (`gateway.testnet2.unicity.network`) or **Mainnet**
    (`gateway.mainnet.unicity.network`) and enter that network's API key. Each network
-   keeps its own key in this browser's local storage.
+   keeps its own key in this browser's local storage. Keys never leave the browser except
+   as the `X-API-Key` header to that network's gateway. Local storage is per origin, and
+   on GitHub Pages every project page of the same owner shares `mastap.github.io`; use the
+   file from disk if that matters for your key.
 2. Untick shards to aim the load at some of them only (all are ticked by default).
 3. Set the **period** (minutes; 0 runs until you stop it), how often to send, and the
    range of commitments per send. Each send picks a random count from the range.
@@ -65,4 +69,7 @@ with `LD_LIBRARY_PATH` if needed. `test/fixtures/make-certified.mjs` regenerates
 certified-proof fixture.
 
 `index.html` is a build output but is committed, so the page can be used without building.
+GitHub Pages serves it as is from the root of `main` (`.nojekyll` turns off Jekyll), so
+rebuild and commit it with any change to `src/`. The build appends the license notices of
+the bundled packages as an HTML comment.
 See `DESIGN.md` for the reasoning behind the behaviour.
